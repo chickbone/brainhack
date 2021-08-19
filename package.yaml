@@ -24,7 +24,6 @@ dependencies:
 - bytestring
 - attoparsec
 - transformers
-- template-haskell
 
 library:
   source-dirs: src

@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+
 module Main where
 
 import Freer.Impl
@@ -8,7 +9,7 @@ main :: IO ()
 main = runConsole $ do
   putC "test"
   x <- getC
-  putC $ "Hello " <> x 
+  putC $ "Hello " <> x
 
 data Console r where
   PutC :: String -> Console ()

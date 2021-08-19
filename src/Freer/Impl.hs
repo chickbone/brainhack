@@ -2,9 +2,9 @@
 
 module Freer.Impl where
 
-import Data.Functor.Identity
 import Control.Monad (join)
 import Control.Monad.Trans.Class
+import Data.Functor.Identity
 
 newtype Freer t a = Freer {unFreer :: forall r. (a -> r) -> (forall x. t x -> (x -> r) -> r) -> r}
 
