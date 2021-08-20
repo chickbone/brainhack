@@ -4,8 +4,8 @@ module Memory where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
-import Data.Word (Word8)
 import Data.MonoTraversable
+import Data.Word (Word8)
 
 data Memory = Memory ByteString Word8 ByteString
   deriving (Eq, Show)

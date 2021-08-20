@@ -11,11 +11,11 @@ import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, modify, put)
 import Control.Monad.Trans.Writer (Writer, runWriter, tell)
 import Data.Attoparsec.ByteString (Parser, choice, many1, parseOnly)
 import Data.Attoparsec.ByteString.Char8 (char)
-import Data.Function (fix)
-import Freer.Impl ( interpretM, singleton, Freer )
-import Memory (Memory, center, emptyMemory, left, mapCenter, right)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
+import Data.Function (fix)
+import Freer.Impl (Freer, interpretM, singleton)
+import Memory (Memory, center, emptyMemory, left, mapCenter, right)
 
 type BFProgram a = Freer BF a
 
@@ -30,7 +30,7 @@ data BF a where
 
 instance Show (BF a) where
   show Inc = "Inc"
-  show Dec  = "Dec"
+  show Dec = "Dec"
   show Next = "Next"
   show Prev = "Prev"
   show GetC = "GetC"
@@ -89,8 +89,8 @@ runBF = flip evalStateT (emptyMemory 30000) . interpretBF
 
 evalBFCode :: ByteString -> IO ()
 evalBFCode code = case parseOnly lexerBF (B.filter (`elem` "+-><,.[]") code) of
-                   Left err -> print err
-                   Right pg -> runBF . mapM_ singleton $ pg
+  Left err -> print err
+  Right pg -> runBF . mapM_ singleton $ pg
 
 inc, dec, next, prev, getC, putC :: BFProgram ()
 inc = singleton Inc

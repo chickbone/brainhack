@@ -1,10 +1,14 @@
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE NoStarIsType #-}
 
-module Freer.Impl (Freer (), FreerT (), interpret, interpretM, interpretT, singleton) where
+module Freer.Impl (Freer (), FreerT (), interpret, interpretM, interpretWithM, interpretT, singleton, singletonM, interpretWith) where
 
 import Control.Monad (join)
 import Control.Monad.Trans.Class
 import Data.Functor.Identity
+import Data.Kind (Type)
 
 newtype Freer t a = Freer {unFreer :: forall r. (a -> r) -> (forall x. t x -> (x -> r) -> r) -> r}
 
@@ -19,12 +23,24 @@ instance Monad (Freer t) where
   Freer ma >>= f = Freer $ \p r -> ma (\a -> unFreer (f a) p r) r
 
 interpret :: (forall x. t x -> x) -> Freer t a -> a
-interpret k f = runIdentity (interpretM (Identity . k) f)
+interpret k = runIdentity . interpretM (Identity . k)
 
-interpretM :: Monad m => (forall x. t x -> m x) -> Freer t a -> m a
+{- INLINE interpret -}
+
+interpretWith :: (forall x. t x -> x) -> (a -> r) -> Freer t a -> r
+interpretWith k f = f . interpret k
+
+{- INLINE interpretWithM -}
+
+interpretM :: Monad m => (t ~> m) -> Freer t ~> m
 interpretM k (Freer m) = m pure (\t p -> k t >>= p)
 
-singleton :: t a -> Freer t a
+interpretWithM :: Monad m => forall r. (t ~> m) -> (a -> r) -> Freer t a -> m r
+interpretWithM k f = fmap f . interpretM k
+
+{- INLINE interpretWithM -}
+
+singleton :: t ~> Freer t
 singleton t = Freer $ \p r -> r t p
 
 newtype FreerT t m a = FreerT {unFreerT :: forall r. (a -> r) -> (m r -> r) -> (forall x. t x -> (x -> r) -> r) -> r}
@@ -39,8 +55,15 @@ instance Applicative (FreerT t m) where
 instance Monad (FreerT t m) where
   FreerT ma >>= f = FreerT $ \p e r -> ma (\a -> unFreerT (f a) p e r) e r
 
-interpretT :: Monad m => (forall x. t x -> m x) -> FreerT t m a -> m a
+singletonM :: t ~> FreerT t m
+singletonM t = FreerT $ \p _ r -> r t p
+
+{- INLINE singltonM -}
+
+interpretT :: Monad m => (t ~> m) -> FreerT t m ~> m
 interpretT k (FreerT m) = m pure join (\t p -> k t >>= p)
 
 instance MonadTrans (FreerT t) where
   lift m = FreerT $ \p e _ -> e (fmap p m)
+
+type (~>) (f :: k -> Type) (g :: k -> Type) = forall (x :: k). f x -> g x
