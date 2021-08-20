@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Freer.Impl where
+module Freer.Impl (Freer (), FreerT (), interpret, interpretM, interpretT, singleton) where
 
 import Control.Monad (join)
 import Control.Monad.Trans.Class
