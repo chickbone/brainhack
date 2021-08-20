@@ -1,9 +1,7 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import Brainfuck
 
 main :: IO ()
-main = putStr "bb"
+main = evalBFCode ",[.,]"

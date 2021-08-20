@@ -24,6 +24,7 @@ dependencies:
 - bytestring
 - attoparsec
 - transformers
+- mono-traversable
 
 library:
   source-dirs: src

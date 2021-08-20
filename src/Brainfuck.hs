@@ -9,12 +9,13 @@ module Brainfuck where
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, modify, put)
 import Control.Monad.Trans.Writer (Writer, runWriter, tell)
-import Data.Attoparsec.ByteString (Parser, choice, endOfInput, many1, manyTill)
-import Data.Attoparsec.ByteString.Char8 (anyChar, char)
+import Data.Attoparsec.ByteString (Parser, choice, many1, parseOnly)
+import Data.Attoparsec.ByteString.Char8 (char)
 import Data.Function (fix)
-import Data.Maybe (catMaybes)
-import Freer.Impl
+import Freer.Impl ( interpretM, singleton, Freer )
 import Memory (Memory, center, emptyMemory, left, mapCenter, right)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 
 type BFProgram a = Freer BF a
 
@@ -25,26 +26,31 @@ data BF a where
   Prev :: BF ()
   GetC :: BF ()
   PutC :: BF ()
-  Loop :: BFProgram a -> BF ()
+  Loop :: [BF a] -> BF ()
+
+instance Show (BF a) where
+  show Inc = "Inc"
+  show Dec  = "Dec"
+  show Next = "Next"
+  show Prev = "Prev"
+  show GetC = "GetC"
+  show PutC = "PutC"
+  show (Loop pg) = "Loop " <> show pg
 
 lexerBF :: Parser [BF ()]
-lexerBF = catMaybes <$> manyTill bf endOfInput
+lexerBF = many1 bf
   where
     bf =
       choice
-        [ Just Inc <$ char '+',
-          Just Dec <$ char '-',
-          Just Next <$ char '>',
-          Just Prev <$ char '<',
-          Just GetC <$ char ',',
-          Just PutC <$ char '.',
-          Just . Loop <$> loop,
-          Nothing <$ anyChar
+        [ Inc <$ char '+',
+          Dec <$ char '-',
+          Next <$ char '>',
+          Prev <$ char '<',
+          GetC <$ char ',',
+          PutC <$ char '.',
+          Loop <$> loop
         ]
-    loopBracket f = catMaybes <$> (char '[' *> many1 f <* char ']')
-    loop = do
-      pg <- loopBracket bf
-      return $ mapM_ singleton pg
+    loop = char '[' *> many1 bf <* char ']'
 
 interpretBF :: BFProgram r -> StateT Memory IO r
 interpretBF = interpretM $ \case
@@ -63,7 +69,7 @@ interpretBF = interpretM $ \case
     let c = center mem
     if c == 0
       then put mem
-      else interpretBF pg >> loop
+      else interpretBF (mapM_ singleton pg) >> put mem >> loop
 
 logBF :: BFProgram a -> Writer String a
 logBF = interpretM $ \case
@@ -73,13 +79,18 @@ logBF = interpretM $ \case
   Prev -> tell "<"
   GetC -> tell ","
   PutC -> tell "."
-  Loop bf -> tell "[" >> logBF bf >> tell "]"
+  Loop bf -> tell "[" >> logBF (mapM_ singleton bf) >> tell "]"
 
 rebuildBF :: BFProgram a -> String
 rebuildBF = snd . runWriter . logBF
 
 runBF :: BFProgram a -> IO a
 runBF = flip evalStateT (emptyMemory 30000) . interpretBF
+
+evalBFCode :: ByteString -> IO ()
+evalBFCode code = case parseOnly lexerBF (B.filter (`elem` "+-><,.[]") code) of
+                   Left err -> print err
+                   Right pg -> runBF . mapM_ singleton $ pg
 
 inc, dec, next, prev, getC, putC :: BFProgram ()
 inc = singleton Inc
