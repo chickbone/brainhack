@@ -10,7 +10,6 @@ import Data.Attoparsec.ByteString (Parser, choice, many1, parseOnly)
 import Data.Attoparsec.ByteString.Char8 (char)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
-import Mason.Builder
 import Data.Function (fix)
 import Freer.Impl (Freer, interpretM, singleton, genFreer)
 import Memory (Memory, center, emptyMemory, left, mapCenter, right)
@@ -74,20 +73,18 @@ logBF = interpretM $ \case
   Loop bf -> tell "[" >> logBF bf >> tell "]"
 
 translateC :: BFProgram a -> ByteString
-translateC = toStrictByteString . snd . runWriter . writerC
+translateC = capturer . snd . runWriter . writerC
   where
-    writerC :: BFProgram a -> Writer (BuilderFor StrictByteStringBackend) a
+    writerC :: BFProgram a -> Writer ByteString a
     writerC = interpretM $ \case
-      Inc -> tellBuilder "(*p)++;"
-      Dec -> tellBuilder "(*p)--;"
-      Next -> tellBuilder "++p;"
-      Prev -> tellBuilder "--p;"
-      GetC -> tellBuilder "*p=getchar();"
-      PutC -> tellBuilder "putchar(*p);"
-      Loop bf -> tellBuilder "while(*p){" >> writerC bf >> tellBuilder "}"
-
-tellBuilder :: ByteString -> Writer (BuilderFor StrictByteStringBackend) ()
-tellBuilder = tell . byteString
+      Inc -> tell "(*p)++;"
+      Dec -> tell "(*p)--;"
+      Next -> tell "++p;"
+      Prev -> tell "--p;"
+      GetC -> tell "getchar(*p);"
+      PutC -> tell "putchar(*p);"
+      Loop bf -> tell "while(*p){" >> writerC bf >> tell "}"
+    capturer = ("#include <stdio.h> int main(){int m[30000]={};int *p=m;" <>) . (<> "}")
 
 rebuildBF :: BFProgram a -> ByteString
 rebuildBF = snd . runWriter . logBF
@@ -102,6 +99,11 @@ evalBFCode :: ByteString -> IO ()
 evalBFCode code = case parseOnly lexerBF (formatBF code) of
   Left err -> print err
   Right pg -> runBF $ genFreer pg
+
+genCProgram :: ByteString -> ByteString
+genCProgram code = case parseOnly lexerBF (formatBF code) of
+                     Left err -> B.pack err
+                     Right pg -> translateC $ genFreer pg
 
 inc, dec, next, prev, getC, putC :: BFProgram ()
 inc = singleton Inc

@@ -25,7 +25,6 @@ dependencies:
 - attoparsec
 - transformers
 - mono-traversable
-- mason
 
 library:
   source-dirs: src
