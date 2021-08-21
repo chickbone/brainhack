@@ -5,4 +5,4 @@ module Main where
 import Brainfuck
 
 main :: IO ()
-main = evalBFCode ",[.,]"
+main = evalBFCode "+++++++++++++++++++++++++++++++++++++++++++.-.++.-."
