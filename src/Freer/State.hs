@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
@@ -45,11 +46,11 @@ instance Functor (StateT s m) where
 instance Applicative (StateT s m) where
   pure a = StateT $ \s p -> p a s
   {-# INLINEABLE pure #-}
-  StateT mf <*> StateT ma = StateT $ \s p -> mf s $ \f s' -> ma s' (p . f)
+  StateT mf <*> StateT ma = StateT $ \ !s p -> mf s $ \f !s' -> ma s' (p . f)
   {-# INLINEABLE (<*>) #-}
 
 instance Monad (StateT s m) where
-  StateT ma >>= f = StateT $ \s p -> ma s $ \a s' -> unStateT (f a) s' p
+  StateT ma >>= f = StateT $ \ !s p -> ma s $ \a !s' -> unStateT (f a) s' p
   {-# INLINEABLE (>>=) #-}
 
 instance MonadState s (StateT s m) where
