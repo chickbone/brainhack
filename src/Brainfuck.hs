@@ -5,14 +5,16 @@
 module Brainfuck (BFProgram, loop, putC, getC, prev, next, dec, inc, runBF, formatBF, evalBFCode, genCProgram, rebuildBF) where
 
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, modify, put)
-import Control.Monad.Trans.Writer.Strict (Writer, runWriter, tell)
+import Control.Monad.State (get, modify, put)
+import Control.Monad.Writer (tell)
 import Data.Attoparsec.ByteString (Parser, choice, many1, parseOnly)
 import Data.Attoparsec.ByteString.Char8 (char)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Data.Function (fix)
 import Freer.Impl (Freer, genFreer, interpretM, singleton)
+import Freer.State (StateT, evalStateT)
+import Freer.Writer (Writer, runWriter)
 import Memory (Memory, center, emptyMemory, left, mapCenter, right)
 import System.IO (hFlush, stdout)
 

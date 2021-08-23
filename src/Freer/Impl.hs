@@ -6,7 +6,7 @@
 module Freer.Impl (Freer (), FreerT (), interpret, interpretM, interpretWithM, interpretT, singleton, singletonM, interpretWith, genFreer) where
 
 import Control.Monad (join)
-import Control.Monad.Trans.Class (MonadTrans (lift))
+import Control.Monad.Trans (MonadTrans, lift)
 import Data.Foldable (traverse_)
 import Data.Kind (Type)
 
