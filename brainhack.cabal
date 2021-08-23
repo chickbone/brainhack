@@ -28,6 +28,7 @@ library
       Brainfuck
       FreeA
       Freer.Impl
+      Freer.State
       Freer.Writer
       Memory
   other-modules:
