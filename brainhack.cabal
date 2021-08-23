@@ -40,7 +40,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , mono-traversable
-    , transformers
+    , mtl
   default-language: Haskell2010
 
 executable brainhack-exe
@@ -56,7 +56,7 @@ executable brainhack-exe
     , brainhack
     , bytestring
     , mono-traversable
-    , transformers
+    , mtl
   default-language: Haskell2010
 
 test-suite brainhack-test
@@ -73,5 +73,5 @@ test-suite brainhack-test
     , brainhack
     , bytestring
     , mono-traversable
-    , transformers
+    , mtl
   default-language: Haskell2010

@@ -1,10 +1,14 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Freer.Writer where
 
-import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.Trans.Class (MonadTrans, lift)
+import Control.Monad.Reader (MonadIO (..), MonadReader (ask, local), MonadTrans (..))
+import Control.Monad.State.Strict (MonadState (get, put))
+import Control.Monad.Writer (MonadWriter (listen, pass, tell, writer))
 import Data.Functor.Identity (Identity (runIdentity))
 
 type Writer w = WriterT w Identity
@@ -47,6 +51,26 @@ instance Monoid w => Monad (WriterT w m) where
 instance Monoid w => MonadTrans (WriterT w) where
   lift m = WriterT $ \p -> m >>= (`p` mempty)
   {-# INLINEABLE lift #-}
+
+instance Monoid w => MonadWriter w (WriterT w m) where
+  writer (a, w) = WriterT $ \c -> c a w
+  {-# INLINEABLE writer #-}
+  tell w = WriterT $ \c -> c () w
+  {-# INLINEABLE tell #-}
+  listen m = WriterT $ \c -> unWriterT m (\a w -> c (a, w) w)
+  {-# INLINEABLE listen #-}
+  pass m = WriterT $ \c -> unWriterT m (\(a, f) w -> c a (f w))
+  {-# INLINEABLE pass #-}
+
+instance (Monoid w, MonadState s m) => MonadState s (WriterT w m) where
+  get = lift get
+  {-# INLINEABLE get #-}
+  put = lift . put
+  {-# INLINEABLE put #-}
+
+instance (Monoid w, MonadReader r m) => MonadReader r (WriterT w m) where
+  ask = lift ask
+  local f m = WriterT $ \c -> local f (runWriterT m) >>= uncurry c
 
 instance (Monoid w, MonadIO m) => MonadIO (WriterT w m) where
   liftIO = lift . liftIO
