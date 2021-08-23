@@ -1,7 +1,8 @@
-{-# LANGUAGE GADTs,OverloadedStrings #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-module Brainfuck where
+module Brainfuck (BFProgram, loop, putC, getC, prev, next, dec, inc, runBF, formatBF, evalBFCode, genCProgram, rebuildBF) where
 
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, modify, put)
@@ -11,9 +12,9 @@ import Data.Attoparsec.ByteString.Char8 (char)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Data.Function (fix)
-import Freer.Impl (Freer, interpretM, singleton, genFreer)
+import Freer.Impl (Freer, genFreer, interpretM, singleton)
 import Memory (Memory, center, emptyMemory, left, mapCenter, right)
-import System.IO (stdout, hFlush)
+import System.IO (hFlush, stdout)
 
 type BFProgram a = Freer BF a
 
@@ -43,15 +44,15 @@ lexerBF = many1 bf
 
 interpretBF :: BFProgram r -> StateT Memory IO r
 interpretBF = interpretM $ \case
-  Inc -> modify $ mapCenter (+ 1)
-  Dec -> modify $ mapCenter (subtract 1)
+  Inc -> modify $! mapCenter (+ 1)
+  Dec -> modify $! mapCenter (subtract 1)
   Next -> modify left
   Prev -> modify right
   GetC -> liftIO getChar >>= modify . mapCenter . const . fromIntegral . fromEnum
   PutC -> do
     mem <- get
     let c = center mem
-    liftIO . putChar . toEnum . fromIntegral $ c
+    liftIO $ print c
     liftIO $ hFlush stdout
     put mem
   Loop pg -> fix $ \goto -> do
@@ -93,7 +94,7 @@ runBF :: BFProgram a -> IO a
 runBF = flip evalStateT (emptyMemory 30000) . interpretBF
 
 formatBF :: ByteString -> ByteString
-formatBF = B.filter (`elem` ("+-><,.[]" :: String)) 
+formatBF = B.filter (`elem` ("+-><,.[]" :: String))
 
 evalBFCode :: ByteString -> IO ()
 evalBFCode code = case parseOnly lexerBF (formatBF code) of
@@ -102,8 +103,8 @@ evalBFCode code = case parseOnly lexerBF (formatBF code) of
 
 genCProgram :: ByteString -> ByteString
 genCProgram code = case parseOnly lexerBF (formatBF code) of
-                     Left err -> B.pack err
-                     Right pg -> translateC $ genFreer pg
+  Left err -> B.pack err
+  Right pg -> translateC $ genFreer pg
 
 inc, dec, next, prev, getC, putC :: BFProgram ()
 inc = singleton Inc
@@ -113,5 +114,5 @@ prev = singleton Prev
 getC = singleton GetC
 putC = singleton PutC
 
-loop :: BFProgram a  -> BFProgram ()
+loop :: BFProgram a -> BFProgram ()
 loop = singleton . Loop

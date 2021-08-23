@@ -3,12 +3,12 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE NoStarIsType #-}
 
-module Freer.Impl (Freer (), FreerT (), interpret, interpretM, interpretWithM, interpretT, singleton, singletonM, interpretWith,genFreer) where
+module Freer.Impl (Freer (), FreerT (), interpret, interpretM, interpretWithM, interpretT, singleton, singletonM, interpretWith, genFreer) where
 
 import Control.Monad (join)
 import Control.Monad.Trans.Class (MonadTrans (lift))
-import Data.Kind (Type)
 import Data.Foldable (traverse_)
+import Data.Kind (Type)
 
 newtype Freer t a = Freer {unFreer :: forall r. (a -> r) -> (forall x. t x -> (x -> r) -> r) -> r}
 
@@ -40,7 +40,7 @@ singleton :: t ~> Freer t
 singleton t = Freer $ \p r -> r t p
 
 genFreer :: Traversable list => list (t a) -> Freer t ()
-genFreer = traverse_ singleton 
+genFreer = traverse_ singleton
 
 newtype FreerT t m a = FreerT {unFreerT :: forall r. (a -> r) -> (m r -> r) -> (forall x. t x -> (x -> r) -> r) -> r}
 

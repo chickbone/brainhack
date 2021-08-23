@@ -1,6 +1,6 @@
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
 
 module FreeA where
 
@@ -29,8 +29,8 @@ interptetF = interptetA
 
 data LogicalGate i o where
   Not :: LogicalGate Bool Bool
-  And :: LogicalGate (Bool,Bool) Bool
-  Or :: LogicalGate (Bool,Bool) Bool
+  And :: LogicalGate (Bool, Bool) Bool
+  Or :: LogicalGate (Bool, Bool) Bool
 
 runGate :: A LogicalGate a b -> a -> b
 runGate = interptetF $ \case
