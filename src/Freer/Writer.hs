@@ -3,9 +3,9 @@
 
 module Freer.Writer where
 
-import Data.Functor.Identity (Identity (runIdentity))
-import Control.Monad.Trans.Class (MonadTrans, lift)
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Trans.Class (MonadTrans, lift)
+import Data.Functor.Identity (Identity (runIdentity))
 
 type Writer w = WriterT w Identity
 
@@ -18,6 +18,7 @@ evalWriter ma = runIdentity $ evalWriterT ma
 {-# INLINEABLE evalWriter #-}
 
 ------------------------------
+
 -- | CPS WriterT
 newtype WriterT w m a = WriterT {unWriterT :: forall r. (a -> w -> m r) -> m r}
 
@@ -48,5 +49,5 @@ instance Monoid w => MonadTrans (WriterT w) where
   {-# INLINEABLE lift #-}
 
 instance (Monoid w, MonadIO m) => MonadIO (WriterT w m) where
-    liftIO = lift . liftIO
-    {-# INLINABLE liftIO #-}
+  liftIO = lift . liftIO
+  {-# INLINEABLE liftIO #-}

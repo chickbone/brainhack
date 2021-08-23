@@ -1,15 +1,27 @@
 {-# LANGUAGE RankNTypes #-}
+
 module Freer.State where
 
--- data State s a = State {runState :: s -> a -> (a, s)}
+import Data.Functor.Identity
 
-newtype StateT s m a = StateT {unStateT :: forall r. s -> (a -> s -> m r) -> m r }
+type State s = StateT s Identity
 
-runStateT :: Monad m => StateT s m a -> s -> m (a,s)
+runState :: State s a -> s -> (a, s)
+runState ma = runIdentity . runStateT ma
+
+evalState :: State s a -> s -> a
+evalState ma = runIdentity . evalStateT ma
+
+execState :: State s a -> s -> s
+execState ma = runIdentity . execStateT ma
+
+newtype StateT s m a = StateT {unStateT :: forall r. s -> (a -> s -> m r) -> m r}
+
+runStateT :: Monad m => StateT s m a -> s -> m (a, s)
 runStateT (StateT ma) s = ma s (curry pure)
 
 evalStateT :: Monad m => StateT s m a -> s -> m a
-evalStateT (StateT ma) s = ma s $ \a _-> pure a
+evalStateT (StateT ma) s = ma s $ \a _ -> pure a
 
 execStateT :: Monad m => StateT s m a -> s -> m s
 execStateT (StateT ma) s = ma s (const pure)
