@@ -70,7 +70,6 @@ instance MonadIO m => MonadIO (StateT s m) where
 
 instance MonadReader e m => MonadReader e (StateT s m) where
   ask = lift ask
-
   local f m = stateT $ \s -> local f (runStateT m s)
 
 instance MonadFix m => MonadFix (StateT s m) where

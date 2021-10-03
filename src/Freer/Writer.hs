@@ -14,11 +14,11 @@ import Data.Functor.Identity (Identity (runIdentity))
 type Writer w = WriterT w Identity
 
 runWriter :: Writer w a -> (a, w)
-runWriter ma = runIdentity $ runWriterT ma
+runWriter = runIdentity . runWriterT
 {-# INLINEABLE runWriter #-}
 
 evalWriter :: Writer w a -> w
-evalWriter ma = runIdentity $ evalWriterT ma
+evalWriter = runIdentity . evalWriterT
 {-# INLINEABLE evalWriter #-}
 
 ------------------------------
@@ -41,11 +41,11 @@ instance Functor (WriterT w m) where
 instance Monoid w => Applicative (WriterT w m) where
   pure a = WriterT $ \q -> q a mempty
   {-# INLINEABLE pure #-}
-  WriterT mf <*> WriterT ma = WriterT $ \q -> mf $ \f !w' -> ma $ \a !w -> q (f a) $! w' <> w
+  WriterT mf <*> WriterT ma = WriterT $ \q -> mf $ \f !w -> ma $ \a !w' -> q (f a) $! w <> w'
   {-# INLINEABLE (<*>) #-}
 
 instance Monoid w => Monad (WriterT w m) where
-  WriterT ma >>= f = WriterT $ \q -> ma $ \a !w' -> unWriterT (f a) $ \b !w -> q b $! w' <> w
+  WriterT ma >>= f = WriterT $ \q -> ma $ \a !w -> unWriterT (f a) $ \b !w' -> q b $! w <> w'
   {-# INLINEABLE (>>=) #-}
 
 instance Monoid w => MonadTrans (WriterT w) where
