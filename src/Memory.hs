@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Memory where
@@ -27,3 +28,9 @@ mapCenter f (Memory l c r) = Memory l (f c) r
 left, right :: Memory -> Memory
 left (Memory ls c rs) = Memory (B.singleton c <> ls) (B.head rs) (B.tail rs)
 right (Memory ls c rs) = Memory (B.tail ls) (B.head ls) (B.singleton c <> rs)
+
+move :: Int -> Memory -> Memory
+move 0 mem = mem
+move n mem
+  | n > 0 = move (n-1) (right mem)
+  | otherwise = move (n+1) (left mem)
